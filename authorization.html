@@ -96,10 +96,8 @@
       font-size: 0.9rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.2s ease, background 0.2s ease;
+      transition: 0.25s;
+      display: none;
     }
 
     .btn:hover {
@@ -131,7 +129,7 @@
 
     <div class="log-line" id="logLine"></div>
 
-    <button class="btn" id="accessBtn">ПОКАЗАТЬ ИДЕНТИФИКАЦИЮ</button>
+    <button class="btn" id="accessBtn">ПОДТВЕРДИТЬ ИДЕНТИФИКАЦИЮ</button>
   </div>
 
   <script>
@@ -185,7 +183,7 @@
       "СТАТУС: ЗАБЛОКИРОВАН",
       "ЗАПРОС: ТРЕБУЕТСЯ ИДЕНТИФИКАЦИЯ.",
       "",
-      "ИНСТРУКЦИЯ: НАЖМИТЕ [ПОКАЗАТЬ ИДЕНТИФИКАЦИЮ], ЧТОБЫ ПРОДОЛЖИТЬ."
+      "ИНСТРУКЦИЯ: НАЖМИТЕ [ПОДТВЕРДИТЬ ИДЕНТИФИКАЦИЮ], ЧТОБЫ ПРОДОЛЖИТЬ."
     ].join("\n");
 
 
@@ -197,6 +195,9 @@
         terminalTextEl.appendChild(cursorEl);
         idx++;
         setTimeout(typeWriter, 33);
+      } else {
+        // Show the button after typing is complete
+        document.getElementById("accessBtn").style.display = "inline-block";
       }
     }
     typeWriter();
