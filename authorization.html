@@ -1,145 +1,184 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NECRONTYR / AUTHORIZATION</title>
+  <title>Necron Access Terminal</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      background: #000;
-      color: #00ff66;
-      font-family: Consolas, "Roboto Mono", monospace;
-    }
-
-    .wrapper {
-      min-height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .terminal {
-      max-width: 900px;
       width: 100%;
-      border: 1px solid #00aa44;
-      padding: 20px 24px;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: "Share Tech Mono", monospace;
+      color: #00ff66;
+
+      /* KEY FIX: Allow iframe to stretch */
+      display: block;
+    }
+
+    /* Make canvas full-screen always */
+    #matrixCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 0;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: radial-gradient(circle at center, rgba(0, 50, 0, 0.25), rgba(0, 0, 0, 0.95));
+      z-index: 1;
+    }
+
+    /* Terminal window centered */
+    .terminal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(90vw, 850px);
+      padding: 32px 40px;
+      border: 2px solid #00ff66;
+      background: rgba(0, 0, 0, 0.85);
+      box-shadow: 0 0 26px rgba(0, 255, 100, 0.8);
+      z-index: 2;
+
+      /* KEY FIX: Avoid cropping inside iframe */
       box-sizing: border-box;
-      background: radial-gradient(circle at top, #002200 0, #000 60%);
-      box-shadow: 0 0 20px #00aa44;
     }
 
     .terminal-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      opacity: 0.7;
-      margin-bottom: 8px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      color: #33ff99;
+      letter-spacing: 0.05em;
     }
 
     .terminal-body {
+      min-height: 160px;
       white-space: pre-wrap;
-      font-size: 16px;
-      line-height: 1.4;
-      min-height: 150px;
+      font-size: 1.05rem;
     }
 
     .cursor {
       display: inline-block;
-      width: 9px;
-      height: 18px;
-      background-color: #00ff66;
-      margin-left: 2px;
-      animation: blink 0.8s steps(1) infinite;
-      vertical-align: bottom;
+      width: 8px;
+      height: 1rem;
+      background: #00ff66;
+      animation: blink 0.8s infinite;
     }
 
     @keyframes blink {
-      50% { opacity: 0; }
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
     }
 
-    .btn-row {
+    .btn {
       margin-top: 20px;
-    }
-
-    .auth-btn {
-      position: relative;
-      padding: 10px 18px;
-      border-radius: 4px;
-      border: 1px solid #00aa44;
-      background: rgba(0, 20, 0, 0.9);
-      color: #00ff99;
-      font-size: 14px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      padding: 12px 28px;
+      background: transparent;
+      border: 2px solid #00ff66;
+      color: #00ff66;
       cursor: pointer;
-      text-decoration: none;
-      filter: drop-shadow(0 0 6px #004422);
-      overflow: hidden;
-
-      /* ВАЖНО: изначально скрыта */
+      font-size: 0.9rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      
       opacity: 0;
       transform: translateY(8px);
       transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
-    .auth-btn::before {
-      content: "";
-      position: absolute;
-      left: -40%;
-      top: 0;
-      width: 40%;
-      height: 100%;
-      background: linear-gradient(120deg, transparent, rgba(0, 255, 153, 0.35), transparent);
-      transform: skewX(-20deg);
-      opacity: 0;
+    .btn:hover {
+      background: rgba(0, 255, 100, 0.15);
+      box-shadow: 0 0 20px rgba(0, 255, 100, 0.6);
     }
 
-    .auth-btn:hover {
-      box-shadow: 0 0 10px #00ff99;
-      background: rgba(0, 40, 0, 0.95);
-    }
-
-    .auth-btn:hover::before {
-      animation: shine 0.7s forwards;
-      opacity: 1;
-    }
-
-    @keyframes shine {
-      from { transform: translateX(-120%) skewX(-20deg); }
-      to   { transform: translateX(200%) skewX(-20deg); }
-    }
-
-    /* Появление после анимации текста */
-    .auth-btn.show {
-      opacity: 1;
-      transform: translateY(0);
+    .log-line {
+      margin-top: 12px;
+      color: #66ffcc;
+      font-size: 0.9rem;
     }
   </style>
 </head>
+
 <body>
-  <div class="wrapper">
-    <div class="terminal">
-      <div class="terminal-header">
-        <div>NECRONTYR / ACCESS-GATE</div>
-        <div>АВТОРИЗАЦИЯ</div>
-      </div>
 
-      <div id="auth-body" class="terminal-body"></div>
+  <canvas id="matrixCanvas"></canvas>
+  <div class="overlay"></div>
 
-      <div class="btn-row">
-        <a href="overview.html" id="show-ident-btn" class="auth-btn">
-          [ ПОКАЗАТЬ ИДЕНТИФИКАЦИЮ ]
-        </a>
-      </div>
+  <div class="terminal">
+    <div class="terminal-header">
+      >> АРХИВ КРИПТЕКОВ НЕКРОНТИРА : УЗЕЛ ДОСТУПА [☥𓊹 𓋆 𓋇'𓋕𓋩𓋪𓋯]]
     </div>
+
+    <div class="terminal-body" id="terminalText">
+      <span class="cursor" id="cursor"></span>
+    </div>
+
+    <div class="log-line" id="logLine"></div>
+
+    <button class="btn" id="accessBtn">ПОКАЗАТЬ ИДЕНТИФИКАЦИЮ</button>
   </div>
 
   <script>
-    const authLines = [
+    /* fullscreen canvas fix */
+    const canvas = document.getElementById("matrixCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    const symbols = "アイウエオカキクケコサシスセソ0123456789ネクロンҨҖӜЖ☥";
+    const fontSize = 16;
+    let columns = Math.floor(window.innerWidth / fontSize);
+    let drops = Array.from({ length: columns }, () => Math.random() * window.innerHeight);
+
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.07)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#00ff66";
+      ctx.font = fontSize + "px Share Tech Mono";
+
+      drops.forEach((y, i) => {
+        const text = symbols.charAt(Math.random() * symbols.length);
+        const x = i * fontSize;
+
+        ctx.fillText(text, x, y * fontSize);
+
+        if (y * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      });
+
+      requestAnimationFrame(drawMatrix);
+    }
+    drawMatrix();
+
+    /* typewriter text */
+    const terminalTextEl = document.getElementById("terminalText");
+    const cursorEl = document.getElementById("cursor");
+
+    const msg = [
       "ИНИЦИАЛИЗАЦИЯ ИНФО-ИМИТАТОРА...",
       "СВЯЗЬ УСТАНОВЛЕНА: УЗЕЛ ДОСТУПА КРИПТЕКА [☥𓊹 𓋆 𓋇'𓋕𓋩𓋪𓋯]",
       "",
@@ -147,57 +186,39 @@
       "ЗАПРОС: ТРЕБУЕТСЯ ИДЕНТИФИКАЦИЯ.",
       "",
       "ИНСТРУКЦИЯ: НАЖМИТЕ [ПОКАЗАТЬ ИДЕНТИФИКАЦИЮ], ЧТОБЫ ПРОДОЛЖИТЬ."
-    ];
+    ].join("\n");
 
-    const typingSpeed = 28;
-    const linePause = 350;
 
-    const authBody = document.getElementById("auth-body");
-    const cursor = document.createElement("span");
-    cursor.className = "cursor";
-    authBody.appendChild(cursor);
+    let idx = 0;
 
-    let lineIndex = 0;
-    let charIndex = 0;
-    let currentText = "";
-
-    function typeAuth() {
-      const line = authLines[lineIndex];
-
-      if (charIndex < line.length) {
-        currentText += line[charIndex];
-        render();
-        charIndex++;
-        setTimeout(typeAuth, typingSpeed);
-      } else {
-        currentText += "\n";
-        render();
-        lineIndex++;
-        charIndex = 0;
-
-        if (lineIndex < authLines.length) {
-          setTimeout(typeAuth, linePause);
-        } else {
-          // Когда ВЕСЬ текст напечатан → показать кнопку
-          showAuthButton();
-        }
+    function typeWriter() {
+      if (idx <= msg.length) {
+        terminalTextEl.innerHTML = msg.slice(0, idx).replace(/\n/g, "<br>");
+        terminalTextEl.appendChild(cursorEl);
+        idx++;
+        setTimeout(typeWriter, 33);
       }
     }
+    typeWriter();
 
-    function render() {
-      authBody.innerHTML = "";
-      authBody.appendChild(document.createTextNode(currentText));
-      authBody.appendChild(cursor);
-    }
+    /* REDIRECT */
+    document.getElementById("accessBtn").onclick = () => {
+      const log = document.getElementById("logLine");
+      let dots = 0;
 
-    function showAuthButton() {
-      const btn = document.getElementById("show-ident-btn");
-      btn.classList.add("show");
-    }
+      const interval = setInterval(() => {
+        dots = (dots + 1) % 4;
+        log.textContent = "[ПРОЦЕСС] ДОСТУП К ФАЙЛУ" + ".".repeat(dots);
+      }, 350);
 
-    window.addEventListener("load", () => {
-      typeAuth();
-    });
+      setTimeout(() => {
+        clearInterval(interval);
+        log.textContent = "[OK] ПЕРЕХОД…";
+
+        window.location.href = "https://changingnickname.github.io/necron-character/overview.html";
+      }, 2400);
+    };
   </script>
+
 </body>
 </html>
