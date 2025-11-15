@@ -47,6 +47,13 @@
       position: relative;
       height: 260px;          /* можно подрегулировать под объём текста */
       overflow: hidden;
+      transition: height 0.6s ease, max-height 0.6s ease;
+    }
+
+    .views.expanded {
+      height: auto;
+      max-height: 600px;
+      overflow-y: auto;
     }
 
     .views-inner {
@@ -64,12 +71,23 @@
       padding-top: 4px;
     }
 
+    .view.expanded-view {
+      height: auto;
+      min-height: 260px;
+    }
+
     .terminal-body {
       white-space: pre-wrap;
       font-size: 16px;
       line-height: 1.4;
       height: 190px;
       overflow-y: hidden;
+    }
+
+    .terminal-body.expanded-body {
+      height: auto;
+      max-height: none;
+      overflow-y: visible;
     }
 
     .cursor {
@@ -368,17 +386,25 @@
 
     /* ---------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ (СЛАЙД ВВЕРХ/ВНИЗ) ---------- */
     const viewsInner = document.getElementById("views-inner");
+    const viewsContainer = document.querySelector(".views");
+    const biometricsView = document.getElementById("view-biometrics");
+    const biometricsBodyEl = document.getElementById("biometrics-body");
 
     function goToView(target) {
       switch (target) {
         case "overview":
           viewsInner.style.transform = "translateY(0)";
+          // Remove expanded classes
+          viewsContainer.classList.remove("expanded");
+          biometricsView.classList.remove("expanded-view");
+          biometricsBodyEl.classList.remove("expanded-body");
           break;
         case "biometrics":
-          // БЫЛО: viewsInner.style.transform = "translateY(-100%)";
-          viewsInner.style.transform = "translateY(-50%)";
-          setTimeout(startBiometricsTyping, 620);
-          break;
+          viewsInner.style.transform = "translateY(-100%)";
+          // Add expanded classes
+          viewsContainer.classList.add("expanded");
+          biometricsView.classList.add("expanded-view");
+          biometricsBodyEl.classList.add("expanded-body");
           // Запустить печать после завершения слайда
           setTimeout(startBiometricsTyping, 620);
           break;
