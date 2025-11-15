@@ -31,6 +31,7 @@
       box-sizing: border-box;
       background: radial-gradient(circle at top, #002200 0, #000 60%);
       box-shadow: 0 0 20px #00aa44;
+      overflow: hidden;
     }
 
     .terminal-header {
@@ -41,11 +42,34 @@
       margin-bottom: 8px;
     }
 
+    /* ОБЛАСТЬ ВИДОВ (ЭКРАНОВ) */
+    .views {
+      position: relative;
+      height: 260px;          /* можно подрегулировать под объём текста */
+      overflow: hidden;
+    }
+
+    .views-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform: translateY(0);
+      transition: transform 0.6s ease;
+    }
+
+    .view {
+      box-sizing: border-box;
+      width: 100%;
+      height: 260px;          /* должен совпадать с .views height */
+      padding-top: 4px;
+    }
+
     .terminal-body {
       white-space: pre-wrap;
       font-size: 16px;
       line-height: 1.4;
-      min-height: 160px;
+      height: 190px;
+      overflow-y: hidden;
     }
 
     .cursor {
@@ -64,7 +88,7 @@
 
     /* КНОПКИ-РАЗДЕЛЫ */
     .buttons-row {
-      margin-top: 24px;
+      margin-top: 16px;
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
@@ -82,8 +106,6 @@
       letter-spacing: 0.06em;
       cursor: pointer;
       text-decoration: none;
-      opacity: 0;
-      transform: translateY(10px);
       filter: drop-shadow(0 0 6px #004422);
       transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.2s ease, background 0.2s ease;
       overflow: hidden;
@@ -121,9 +143,26 @@
       transform: translateY(0);
     }
 
+    /* Чуть приглушённая кнопка "Назад" */
+    .nav-btn.back {
+      border-color: #008844;
+      color: #66ffcc;
+      text-transform: none;
+      letter-spacing: 0.03em;
+    }
+
     @media (max-width: 600px) {
       .terminal {
         padding: 16px 14px;
+      }
+      .views {
+        height: 280px;
+      }
+      .view {
+        height: 280px;
+      }
+      .terminal-body {
+        height: 210px;
       }
       .buttons-row {
         flex-direction: column;
@@ -143,26 +182,44 @@
         <div>УРОВЕНЬ ДОПУСКА: &Omega;-VERITAS</div>
       </div>
 
-      <div id="terminal-body" class="terminal-body"></div>
+      <div class="views">
+        <div class="views-inner" id="views-inner">
+          <!-- ====== ЭКРАН ОБЗОРА ====== -->
+          <section class="view" id="view-overview">
+            <div id="overview-body" class="terminal-body"></div>
 
-      <div class="buttons-row">
-        <!-- Здесь ссылки на другие страницы/документы -->
-        <a href="zaargul_biometrics.html" class="nav-btn" data-order="0">
-          Биометрическая Идентификация
-        </a>
-        <a href="zaargul_protocols.html" class="nav-btn" data-order="1">
-          Протоколы
-        </a>
-        <a href="zaargul_dossier.html" class="nav-btn" data-order="2">
-          Личное Дело
-        </a>
+            <div class="buttons-row">
+              <button class="nav-btn" data-target="biometrics">
+                Биометрическая Идентификация
+              </button>
+              <button class="nav-btn" data-target="protocols">
+                Протоколы
+              </button>
+              <button class="nav-btn" data-target="dossier">
+                Личное Дело
+              </button>
+            </div>
+          </section>
+
+          <!-- ====== ЭКРАН БИОМЕТРИИ ====== -->
+          <section class="view" id="view-biometrics">
+            <div id="biometrics-body" class="terminal-body"></div>
+
+            <div class="buttons-row">
+              <button class="nav-btn back" data-target="overview">
+                &laquo; Вернуться к обзору файла
+              </button>
+              <!-- Сюда потом можно добавить другие кнопки, если нужно -->
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    // Текст, который будет печататься при входе
-    const infoLines = [
+    /* ---------- ТЕКСТ ОБЗОРА ---------- */
+    const overviewLines = [
       ">> ИНИЦИАЛИЗАЦИЯ ДОСТУПА К АРХИВУ...",
       ">> ПОИСК ФАЙЛА: За'аргул, Лич-Страж...",
       ">> СТАТУС: АКТИВЕН   |   РЕГАЛИЯ: ЛИЧ-СТРАЖ РЕГЕНТА",
@@ -171,62 +228,160 @@
       ">> ПРЕДВАРИТЕЛЬНЫЙ ОБЗОР ФАЙЛА ЗАГРУЖЕН."
     ];
 
-    const typingSpeed = 28; // мс на символ
-    const linePause = 350;  // пауза между строками
+    /* ---------- ТЕКСТ БИОМЕТРИИ / АВТОРИЗАЦИИ ---------- */
+    const biometricsLines = [
+      ">> ДОСТУП К ПОДРАЗДЕЛУ: БИОМЕТРИЧЕСКАЯ ИДЕНТИФИКАЦИЯ...",
+      ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
+      ">> ЗАГРУЗКА ТЕЛЕСНЫХ ПАРАМЕТРОВ ЛИЧ-СТРАЖА...",
+      "",
+      "   ИДЕНТИФИКАТОР: ЗА'АРГУЛ",
+      "   ТЕЛЕСНАЯ ФОРМА: НЕКРОДЕРМИС, ФАЗОВО УСТОЙЧИВАЯ",
+      "   РАНГ ВОИНА: ЛИЧ-СТРАЖ РЕГЕНТА",
+      "   СТАТУС РЕАКТИВАЦИИ: НЕПРЕРЫВНЫЙ БОЕВОЙ РЕЖИМ",
+      "   ЛОКАЛЬНЫЕ ПОВРЕЖДЕНИЯ: [УСТРАНЕНЫ АВТО-РЕФОРМАЦИЕЙ]",
+      "",
+      ">> БИОМЕТРИЧЕСКОЕ ДЕЛО ГОТОВО К ПРОСМОТРУ."
+    ];
 
-    const terminalBody = document.getElementById("terminal-body");
+    const typingSpeed = 28;
+    const linePause = 350;
 
-    const cursor = document.createElement("span");
-    cursor.className = "cursor";
-    terminalBody.appendChild(cursor);
+    /* ---------- ОБЗОР: АНИМАЦИЯ ПЕЧАТИ ---------- */
+    const overviewBody = document.getElementById("overview-body");
+    const overviewCursor = document.createElement("span");
+    overviewCursor.className = "cursor";
+    overviewBody.appendChild(overviewCursor);
 
-    let lineIndex = 0;
-    let charIndex = 0;
-    let currentText = "";
+    let ovLineIndex = 0;
+    let ovCharIndex = 0;
+    let ovCurrentText = "";
 
-    function typeNextChar() {
-      const line = infoLines[lineIndex];
+    function typeOverview() {
+      const line = overviewLines[ovLineIndex];
 
-      if (charIndex < line.length) {
-        currentText += line[charIndex];
-        renderText();
-        charIndex++;
-        setTimeout(typeNextChar, typingSpeed);
+      if (ovCharIndex < line.length) {
+        ovCurrentText += line[ovCharIndex];
+        renderOverview();
+        ovCharIndex++;
+        setTimeout(typeOverview, typingSpeed);
       } else {
-        // строка закончена
-        currentText += "\n";
-        renderText();
-        lineIndex++;
-        charIndex = 0;
+        ovCurrentText += "\n";
+        renderOverview();
+        ovLineIndex++;
+        ovCharIndex = 0;
 
-        if (lineIndex < infoLines.length) {
-          setTimeout(typeNextChar, linePause);
+        if (ovLineIndex < overviewLines.length) {
+          setTimeout(typeOverview, linePause);
         } else {
-          // закончили все строки — показать кнопки
-          showButtons();
+          // когда обзор закончен — можно, если хочешь, красиво показать кнопки
+          showOverviewButtons();
         }
       }
     }
 
-    function renderText() {
-      terminalBody.innerHTML = "";
-      const textNode = document.createTextNode(currentText);
-      terminalBody.appendChild(textNode);
-      terminalBody.appendChild(cursor);
+    function renderOverview() {
+      overviewBody.innerHTML = "";
+      overviewBody.appendChild(document.createTextNode(ovCurrentText));
+      overviewBody.appendChild(overviewCursor);
     }
 
-    function showButtons() {
-      const buttons = document.querySelectorAll(".nav-btn");
+    function showOverviewButtons() {
+      const buttons = document.querySelectorAll("#view-overview .nav-btn");
       buttons.forEach((btn, i) => {
+        btn.style.opacity = "0";
+        btn.style.transform = "translateY(10px)";
         setTimeout(() => {
           btn.classList.add("show");
-        }, 250 * i); // ступенчатое появление
+        }, 200 * i);
       });
     }
 
-    // Запуск печати при загрузке
+    /* ---------- БИОМЕТРИЯ: АНИМАЦИЯ ПЕЧАТИ ---------- */
+    const biometricsBody = document.getElementById("biometrics-body");
+    const biometricsCursor = document.createElement("span");
+    biometricsCursor.className = "cursor";
+
+    let bioLineIndex = 0;
+    let bioCharIndex = 0;
+    let bioCurrentText = "";
+    let biometricsStarted = false;
+
+    function startBiometricsTyping() {
+      if (biometricsStarted) return;
+      biometricsStarted = true;
+
+      biometricsBody.innerHTML = "";
+      bioLineIndex = 0;
+      bioCharIndex = 0;
+      bioCurrentText = "";
+      biometricsBody.appendChild(biometricsCursor);
+      typeBiometrics();
+    }
+
+    function typeBiometrics() {
+      const line = biometricsLines[bioLineIndex];
+
+      if (bioCharIndex < line.length) {
+        bioCurrentText += line[bioCharIndex];
+        renderBiometrics();
+        bioCharIndex++;
+        setTimeout(typeBiometrics, typingSpeed);
+      } else {
+        bioCurrentText += "\n";
+        renderBiometrics();
+        bioLineIndex++;
+        bioCharIndex = 0;
+
+        if (bioLineIndex < biometricsLines.length) {
+          setTimeout(typeBiometrics, linePause);
+        }
+      }
+    }
+
+    function renderBiometrics() {
+      biometricsBody.innerHTML = "";
+      biometricsBody.appendChild(document.createTextNode(bioCurrentText));
+      biometricsBody.appendChild(biometricsCursor);
+    }
+
+    /* ---------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ (СЛАЙД ВВЕРХ/ВНИЗ) ---------- */
+    const viewsInner = document.getElementById("views-inner");
+
+    function goToView(target) {
+      switch (target) {
+        case "overview":
+          viewsInner.style.transform = "translateY(0)";
+          break;
+        case "biometrics":
+          viewsInner.style.transform = "translateY(-100%)";
+          // Запустить печать после завершения слайда
+          setTimeout(startBiometricsTyping, 620);
+          break;
+        default:
+          // остальные пока-заглушки
+          alert("Раздел \"" + target + "\" ещё не активирован.");
+      }
+    }
+
+    /* ---------- ОБРАБОТЧИКИ КНОПОК ---------- */
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest(".nav-btn");
+      if (!btn) return;
+
+      const target = btn.getAttribute("data-target");
+      if (!target) return;
+
+      e.preventDefault();
+      if (target === "biometrics" || target === "overview") {
+        goToView(target);
+      } else {
+        goToView(target);
+      }
+    });
+
+    /* ---------- ЗАПУСК ОБЗОРА ---------- */
     window.addEventListener("load", () => {
-      typeNextChar();
+      typeOverview();
     });
   </script>
 </body>
