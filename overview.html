@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Файл: За'аргул, Лич-Страж</title>
+  <style>
+    /* БАЗОВЫЙ СТИЛЬ СТРАНИЦЫ */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      color: #00ff66;
+      font-family: Consolas, "Roboto Mono", monospace;
+    }
+
+    .wrapper {
+      min-height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .terminal {
+      max-width: 900px;
+      width: 100%;
+      border: 1px solid #00aa44;
+      padding: 20px 24px;
+      box-sizing: border-box;
+      background: radial-gradient(circle at top, #002200 0, #000 60%);
+      box-shadow: 0 0 20px #00aa44;
+    }
+
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+
+    .terminal-body {
+      white-space: pre-wrap;
+      font-size: 16px;
+      line-height: 1.4;
+      min-height: 160px;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 9px;
+      height: 18px;
+      background-color: #00ff66;
+      margin-left: 2px;
+      animation: blink 0.8s steps(1) infinite;
+      vertical-align: bottom;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* КНОПКИ-РАЗДЕЛЫ */
+    .buttons-row {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      position: relative;
+      padding: 10px 16px;
+      border-radius: 4px;
+      border: 1px solid #00aa44;
+      background: rgba(0, 20, 0, 0.9);
+      color: #00ff99;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      text-decoration: none;
+      opacity: 0;
+      transform: translateY(10px);
+      filter: drop-shadow(0 0 6px #004422);
+      transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.2s ease, background 0.2s ease;
+      overflow: hidden;
+    }
+
+    .nav-btn::before {
+      content: "";
+      position: absolute;
+      left: -40%;
+      top: 0;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(0, 255, 153, 0.35), transparent);
+      transform: skewX(-20deg);
+      opacity: 0;
+    }
+
+    .nav-btn:hover {
+      box-shadow: 0 0 10px #00ff99;
+      background: rgba(0, 40, 0, 0.95);
+    }
+
+    .nav-btn:hover::before {
+      animation: shine 0.7s forwards;
+      opacity: 1;
+    }
+
+    @keyframes shine {
+      from { transform: translateX(-120%) skewX(-20deg); }
+      to   { transform: translateX(200%) skewX(-20deg); }
+    }
+
+    .nav-btn.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 600px) {
+      .terminal {
+        padding: 16px 14px;
+      }
+      .buttons-row {
+        flex-direction: column;
+      }
+      .nav-btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div>NECRONTYR / DATA-NEXUS</div>
+        <div>УРОВЕНЬ ДОПУСКА: &Omega;-VERITAS</div>
+      </div>
+
+      <div id="terminal-body" class="terminal-body"></div>
+
+      <div class="buttons-row">
+        <!-- Здесь ссылки на другие страницы/документы -->
+        <a href="zaargul_biometrics.html" class="nav-btn" data-order="0">
+          Биометрическая Идентификация
+        </a>
+        <a href="zaargul_protocols.html" class="nav-btn" data-order="1">
+          Протоколы
+        </a>
+        <a href="zaargul_dossier.html" class="nav-btn" data-order="2">
+          Личное Дело
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Текст, который будет печататься при входе
+    const infoLines = [
+      ">> ИНИЦИАЛИЗАЦИЯ ДОСТУПА К АРХИВУ...",
+      ">> ПОИСК ФАЙЛА: За'аргул, Лич-Страж...",
+      ">> СТАТУС: АКТИВЕН   |   РЕГАЛИЯ: ЛИЧ-СТРАЖ РЕГЕНТА",
+      ">> ДИНАСТИЯ: АР-НЕКФИСТ   |   МИР-ГРОБНИЦА: [ДАННЫЕ ЗАШИФРОВАНЫ]",
+      ">> ФУНКЦИЯ: ПЕРВЫЙ МЕЧ, ТЕЛЕСНАЯ ГВАРДИЯ, ИСПОЛНИТЕЛЬ ПРИГОВОРОВ",
+      ">> ПРЕДВАРИТЕЛЬНЫЙ ОБЗОР ФАЙЛА ЗАГРУЖЕН."
+    ];
+
+    const typingSpeed = 28; // мс на символ
+    const linePause = 350;  // пауза между строками
+
+    const terminalBody = document.getElementById("terminal-body");
+
+    const cursor = document.createElement("span");
+    cursor.className = "cursor";
+    terminalBody.appendChild(cursor);
+
+    let lineIndex = 0;
+    let charIndex = 0;
+    let currentText = "";
+
+    function typeNextChar() {
+      const line = infoLines[lineIndex];
+
+      if (charIndex < line.length) {
+        currentText += line[charIndex];
+        renderText();
+        charIndex++;
+        setTimeout(typeNextChar, typingSpeed);
+      } else {
+        // строка закончена
+        currentText += "\n";
+        renderText();
+        lineIndex++;
+        charIndex = 0;
+
+        if (lineIndex < infoLines.length) {
+          setTimeout(typeNextChar, linePause);
+        } else {
+          // закончили все строки — показать кнопки
+          showButtons();
+        }
+      }
+    }
+
+    function renderText() {
+      terminalBody.innerHTML = "";
+      const textNode = document.createTextNode(currentText);
+      terminalBody.appendChild(textNode);
+      terminalBody.appendChild(cursor);
+    }
+
+    function showButtons() {
+      const buttons = document.querySelectorAll(".nav-btn");
+      buttons.forEach((btn, i) => {
+        setTimeout(() => {
+          btn.classList.add("show");
+        }, 250 * i); // ступенчатое появление
+      });
+    }
+
+    // Запуск печати при загрузке
+    window.addEventListener("load", () => {
+      typeNextChar();
+    });
+  </script>
+</body>
+</html>
