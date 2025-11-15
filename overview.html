@@ -107,8 +107,12 @@
       cursor: pointer;
       text-decoration: none;
       filter: drop-shadow(0 0 6px #004422);
-      transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.2s ease, background 0.2s ease;
       overflow: hidden;
+
+      /* ВАЖНО: изначально скрыты */
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
     .nav-btn::before {
@@ -288,13 +292,12 @@
     function showOverviewButtons() {
       const buttons = document.querySelectorAll("#view-overview .nav-btn");
       buttons.forEach((btn, i) => {
-        btn.style.opacity = "0";
-        btn.style.transform = "translateY(10px)";
         setTimeout(() => {
           btn.classList.add("show");
-        }, 200 * i);
+        }, 200 * i); // ступенчатое появление
       });
     }
+
 
     /* ---------- БИОМЕТРИЯ: АНИМАЦИЯ ПЕЧАТИ ---------- */
     const biometricsBody = document.getElementById("biometrics-body");
