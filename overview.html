@@ -45,21 +45,20 @@
     /* ОБЛАСТЬ ВИДОВ (ЭКРАНОВ) */
     .views {
       position: relative;
-      height: 260px;          /* можно подрегулировать под объём текста */
+      height: 260px;
       overflow: hidden;
-      transition: height 0.6s ease, max-height 0.6s ease;
+      transition: height 0.6s ease;
     }
 
     .views.expanded {
-      height: auto;
-      max-height: 600px;
+      height: 500px;
       overflow-y: auto;
     }
 
     .views-inner {
       position: relative;
       width: 100%;
-      height: 100%;
+      min-height: 260px;
       transform: translateY(0);
       transition: transform 0.6s ease;
     }
@@ -67,27 +66,16 @@
     .view {
       box-sizing: border-box;
       width: 100%;
-      height: 260px;          /* должен совпадать с .views height */
-      padding-top: 4px;
-    }
-
-    .view.expanded-view {
-      height: auto;
       min-height: 260px;
+      padding-top: 4px;
     }
 
     .terminal-body {
       white-space: pre-wrap;
       font-size: 16px;
       line-height: 1.4;
-      height: 190px;
+      min-height: 190px;
       overflow-y: hidden;
-    }
-
-    .terminal-body.expanded-body {
-      height: auto;
-      max-height: none;
-      overflow-y: visible;
     }
 
     .cursor {
@@ -394,19 +382,20 @@
       switch (target) {
         case "overview":
           viewsInner.style.transform = "translateY(0)";
-          // Remove expanded classes
-          viewsContainer.classList.remove("expanded");
-          biometricsView.classList.remove("expanded-view");
-          biometricsBodyEl.classList.remove("expanded-body");
+          // Remove expanded class and let it shrink back
+          setTimeout(() => {
+            viewsContainer.classList.remove("expanded");
+          }, 600);
           break;
         case "biometrics":
-          viewsInner.style.transform = "translateY(-100%)";
-          // Add expanded classes
+          // First expand the container
           viewsContainer.classList.add("expanded");
-          biometricsView.classList.add("expanded-view");
-          biometricsBodyEl.classList.add("expanded-body");
+          // Then slide after a brief moment
+          setTimeout(() => {
+            viewsInner.style.transform = "translateY(-500px)";
+          }, 50);
           // Запустить печать после завершения слайда
-          setTimeout(startBiometricsTyping, 620);
+          setTimeout(startBiometricsTyping, 670);
           break;
         default:
           // остальные пока-заглушки
