@@ -69,30 +69,32 @@
       padding-top: 4px;
     }
 
-    #view-biometrics {
+    #view-biometrics,
+    #view-protocols,
+    #view-dossier {              /* <<< НОВОЕ: добавили dossier */
       padding-top: 255px;
     }
 
-    #view-biometrics .buttons-row {
+    #view-biometrics .buttons-row,
+    #view-protocols .buttons-row,
+    #view-dossier .buttons-row { /* <<< НОВОЕ: общий стиль */
       margin-top: 0;
       margin-bottom: 20px;
     }
 
-    #view-protocols {
-      padding-top: 255px;
-    }
-
-    #view-protocols .buttons-row {
-      margin-top: 0;
-      margin-bottom: 20px;
-    }
-
+    /* ОБЩИЙ БЛОК ТЕКСТА — БЕЗ СКРОЛЛА */
     .terminal-body {
       white-space: pre-wrap;
       font-size: 16px;
       line-height: 1.4;
       min-height: 190px;
-      overflow-y: auto;
+      overflow-y: hidden;        /* <<< ВАЖНО: тут скролл убираем */
+    }
+
+    /* СКРОЛЛ ТОЛЬКО ДЛЯ ЛИЧНОГО ДЕЛА */
+    #dossier-body {               /* <<< НОВОЕ */
+      max-height: 400px;          /* ограничиваем высоту */
+      overflow-y: auto;           /* внутренний скролл только здесь */
     }
 
     .cursor {
@@ -182,33 +184,37 @@
       transform: translateY(0);
     }
 
-
     @media (max-width: 600px) {
       .terminal {
         padding: 16px 14px;
       }
-      /* ЗАМЕНИ эти фрагменты у себя */
 
-    .views {
-      position: relative;
-      height: 340px;      /* было 260px */
-      overflow: hidden;
-    }
+      .views {
+        position: relative;
+        height: 340px;
+        overflow: hidden;
+      }
 
-    .view {
-      box-sizing: border-box;
-      width: 100%;
-      height: 340px;      /* было 260px */
-      padding-top: 4px;
-    }
+      .view {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 260px;
+        padding-top: 0;
+        display: flex;              /* делаем колонку */
+        flex-direction: column;
+      }
 
-    .terminal-body {
-      white-space: pre-wrap;
-      font-size: 16px;
-      line-height: 1.4;
-      height: 240px;      /* было 190px */
-      overflow-y: auto;   /* было hidden – теперь можно прокручивать, если текста слишком много */
-    }
+      .terminal-body {
+        white-space: pre-wrap;
+        font-size: 16px;
+        line-height: 1.4;
+        flex: 1;                    /* занимает всё свободное место */
+        overflow-y: hidden;         /* по умолчанию без скролла */
+      }
+
+      #dossier-body {           /* но для личного дела включаем */
+        overflow-y: auto;
+      }
 
       .buttons-row {
         flex-direction: column;
@@ -253,9 +259,7 @@
               <button class="nav-btn back" data-target="overview">
                 &laquo; ВЕРНУТЬСЯ К ОБЗОРУ ФАЙЛА
               </button>
-              <!-- Сюда потом можно добавить другие кнопки, если нужно -->
             </div>
-
             <div id="biometrics-body" class="terminal-body"></div>
           </section>
 
@@ -266,8 +270,17 @@
                 &laquo; ВЕРНУТЬСЯ К ОБЗОРУ ФАЙЛА
               </button>
             </div>
-
             <div id="protocols-body" class="terminal-body"></div>
+          </section>
+
+          <!-- ====== ЭКРАН ЛИЧНОГО ДЕЛА ====== -->
+          <section class="view" id="view-dossier">   <!-- <<< НОВОЕ -->
+            <div class="buttons-row">
+              <button class="nav-btn back" data-target="overview">
+                &laquo; ВЕРНУТЬСЯ К ОБЗОРУ ФАЙЛА
+              </button>
+            </div>
+            <div id="dossier-body" class="terminal-body"></div>
           </section>
         </div>
       </div>
@@ -300,7 +313,7 @@
       "   СТАТУС РЕАКТИВАЦИИ: НЕПРЕРЫВНЫЙ БОЕВОЙ РЕЖИМ",
       "   ВЫСОТА: 2.75 МЕТРА",
       "   ВЕС: 680 КИЛОГРАММ",
-      "   ВОЗРАСТ: 60,049,147 лет", 
+      "   ВОЗРАСТ: 60,049,147 лет",
       "   В ПОДЧИНЕНИИ: РЕГЕНТУ ТИРАНХУ",
       "",
       ">> БИОМЕТРИЧЕСКОЕ ДЕЛО ГОТОВО К ПРОСМОТРУ."
@@ -312,11 +325,42 @@
       ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
       ">> ЗАГРУЗКА ПРОТОКОЛОВ ЛИЧ-СТРАЖА...",
       "",
-      "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА",
+      "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА.",
       "",
-      "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖИТЬ НЕКРОНОВ",
+      "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ ДЕФЕКТНЫХ НЕКРОН-ЕДИНИЦ.",
       "",
       ">> СПИСОК ПРОТОКОЛОВ ГОТОВ К ПРОСМОТРУ."
+    ];
+
+    /* ---------- ТЕКСТ ЛИЧНОГО ДЕЛА ---------- */
+    const dossierLines = [
+      ">> ДОСТУП К ПОДРАЗДЕЛУ: ЛИЧНОЕ ДЕЛО...",
+      ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
+      ">> ЗАГРУЗКА ЛИЧНОГО ДЕЛА ЛИЧ-СТРАЖА ЗА'АРГУЛА...",
+      "",
+      "   ДОСЬЕ: ЗА'АРГУЛ",
+      "   РОЛЬ: СВИТА РЕГЕНТА TYRANTH, ЛИЧ-СТРАЖ, ПЕРВЫЙ МЕЧ.",
+      "",
+      "   КРАТКАЯ ИСТОРИЯ:",
+      "     > До биотрансфера: личный прозорец Регента, предсказавший страдания",
+      "       расы после сделки с К'тан.",
+      "     > Насильственно отправлен на биотрансфер по требованию старших Домов.",
+      "     > Пробудился с сохранённой эмоциональной матрицей и патологической",
+      "       ненавистью к сородичам.",
+      "",
+      "   ПСИХО-ПРОФИЛЬ:",
+      "     > Абсолютная преданность голосу Регента.",
+      "     > Стойкая агрессия к любой некрон-единице вне прямого приказа.",
+      "     > Зафиксированы многомиллионолетние периоды одиночного несна.",
+      "",
+      "   ОСОБЫЕ ОТМЕТКИ:",
+      "     > Допущен к постоянной охране саркофагов Регента и Первой Касы.",
+      "     > Проявляет аномальную терпимость к Каноптек-конструкциям.",
+      "     > В бою проявляет сверхнормативную эффективность против собственных",
+      "       боевых единиц, если они помечены как 'отклонение'.",
+      "",
+      ">> ЛИЧНОЕ ДЕЛО: ЗАГРУЗКА ЗАВЕРШЕНА.",
+      ">> ПРОКРУТИТЕ ДЛЯ ПРОСМОТРА ПОЛНОГО ЗАПИСАННОГО БЛОКА."
     ];
 
     // const typingSpeed = 15;
@@ -352,7 +396,6 @@
         if (ovLineIndex < overviewLines.length) {
           setTimeout(typeOverview, linePause);
         } else {
-          // когда обзор закончен — можно, если хочешь, красиво показать кнопки
           showOverviewButtons();
         }
       }
@@ -369,12 +412,11 @@
       buttons.forEach((btn, i) => {
         setTimeout(() => {
           btn.classList.add("show");
-        }, 200 * i); // ступенчатое появление
+        }, 200 * i);
       });
     }
 
-
-    /* ---------- БИОМЕТРИЯ: АНИМАЦИЯ ПЕЧАТИ ---------- */
+    /* ---------- БИОМЕТРИЯ ---------- */
     const biometricsBody = document.getElementById("biometrics-body");
     const biometricsCursor = document.createElement("span");
     biometricsCursor.className = "cursor";
@@ -422,7 +464,7 @@
       biometricsBody.appendChild(biometricsCursor);
     }
 
-    /* ---------- ПРОТОКОЛЫ: АНИМАЦИЯ ПЕЧАТИ ---------- */
+    /* ---------- ПРОТОКОЛЫ ---------- */
     const protocolsBody = document.getElementById("protocols-body");
     const protocolsCursor = document.createElement("span");
     protocolsCursor.className = "cursor";
@@ -470,54 +512,110 @@
       protocolsBody.appendChild(protocolsCursor);
     }
 
-    /* ---------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ (СЛАЙД ВВЕРХ/ВНИЗ) ---------- */
+    /* ---------- ЛИЧНОЕ ДЕЛО ---------- */
+    const dossierBody = document.getElementById("dossier-body");
+    const dossierCursor = document.createElement("span");
+    dossierCursor.className = "cursor";
+
+    let dossierLineIndex = 0;
+    let dossierCharIndex = 0;
+    let dossierCurrentText = "";
+    let dossierStarted = false;
+
+    function startDossierTyping() {
+      if (dossierStarted) return;
+      dossierStarted = true;
+
+      dossierBody.innerHTML = "";
+      dossierLineIndex = 0;
+      dossierCharIndex = 0;
+      dossierCurrentText = "";
+      dossierBody.appendChild(dossierCursor);
+      typeDossier();
+    }
+
+    function typeDossier() {
+      const line = dossierLines[dossierLineIndex];
+
+      if (dossierCharIndex < line.length) {
+        dossierCurrentText += line[dossierCharIndex];
+        renderDossier();
+        dossierCharIndex++;
+        setTimeout(typeDossier, typingSpeed);
+      } else {
+        dossierCurrentText += "\n";
+        renderDossier();
+        dossierLineIndex++;
+        dossierCharIndex = 0;
+
+        if (dossierLineIndex < dossierLines.length) {
+          setTimeout(typeDossier, linePause);
+        }
+      }
+    }
+
+    function renderDossier() {
+      dossierBody.innerHTML = "";
+      dossierBody.appendChild(document.createTextNode(dossierCurrentText));
+      dossierBody.appendChild(dossierCursor);
+    }
+
+    /* ---------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ ---------- */
     const viewsInner = document.getElementById("views-inner");
     const viewsContainer = document.querySelector(".views");
-    const biometricsView = document.getElementById("view-biometrics");
-    const biometricsBodyEl = document.getElementById("biometrics-body");
 
     function goToView(target) {
       switch (target) {
         case "overview":
           viewsInner.style.transform = "translateY(0)";
-          // Remove expanded class and let it shrink back
           setTimeout(() => {
             viewsContainer.classList.remove("expanded");
           }, 600);
-          // Reset biometrics and protocols text
+
+          // сбрасываем все экраны
           biometricsBody.innerHTML = "";
           protocolsBody.innerHTML = "";
+          dossierBody.innerHTML = "";
+
           biometricsStarted = false;
           protocolsStarted = false;
-          bioLineIndex = 0;
-          bioCharIndex = 0;
+          dossierStarted = false;
+
+          bioLineIndex = bioCharIndex = 0;
           bioCurrentText = "";
-          protLineIndex = 0;
-          protCharIndex = 0;
+
+          protLineIndex = protCharIndex = 0;
           protCurrentText = "";
+
+          dossierLineIndex = dossierCharIndex = 0;
+          dossierCurrentText = "";
           break;
+
         case "biometrics":
-          // First expand the container
           viewsContainer.classList.add("expanded");
-          // Then slide after a brief moment
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-500px)";
           }, 50);
-          // Запустить печать после завершения слайда
           setTimeout(startBiometricsTyping, 670);
           break;
+
         case "protocols":
-          // First expand the container
           viewsContainer.classList.add("expanded");
-          // Then slide after a brief moment (1000px = 2 views down)
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-1000px)";
           }, 50);
-          // Запустить печать после завершения слайда
           setTimeout(startProtocolsTyping, 670);
           break;
+
+        case "dossier":
+          viewsContainer.classList.add("expanded");
+          setTimeout(() => {
+            viewsInner.style.transform = "translateY(-1500px)";
+          }, 50);
+          setTimeout(startDossierTyping, 670);
+          break;
+
         default:
-          // остальные пока-заглушки
           alert("Раздел \"" + target + "\" ещё не активирован.");
       }
     }
@@ -531,7 +629,7 @@
       if (!target) return;
 
       e.preventDefault();
-      if (target === "biometrics" || target === "overview" || target === "protocols") {
+      if (["biometrics", "overview", "protocols", "dossier"].includes(target)) {
         goToView(target);
       } else {
         goToView(target);
