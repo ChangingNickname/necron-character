@@ -70,7 +70,7 @@
     }
 
     #view-biometrics {
-      padding-top: 240px;
+      padding-top: 255px;
     }
 
     #view-biometrics .buttons-row {
@@ -79,7 +79,7 @@
     }
 
     #view-protocols {
-      padding-top: 240px;
+      padding-top: 255px;
     }
 
     #view-protocols .buttons-row {
@@ -319,11 +319,11 @@
       ">> СПИСОК ПРОТОКОЛОВ ГОТОВ К ПРОСМОТРУ."
     ];
 
-    const typingSpeed = 15;
-    const linePause = 200;
+    // const typingSpeed = 15;
+    // const linePause = 200;
 
-    // const typingSpeed = 1;
-    // const linePause = 2;
+    const typingSpeed = 1;
+    const linePause = 2;
 
     /* ---------- ОБЗОР: АНИМАЦИЯ ПЕЧАТИ ---------- */
     const overviewBody = document.getElementById("overview-body");
@@ -484,6 +484,17 @@
           setTimeout(() => {
             viewsContainer.classList.remove("expanded");
           }, 600);
+          // Reset biometrics and protocols text
+          biometricsBody.innerHTML = "";
+          protocolsBody.innerHTML = "";
+          biometricsStarted = false;
+          protocolsStarted = false;
+          bioLineIndex = 0;
+          bioCharIndex = 0;
+          bioCurrentText = "";
+          protLineIndex = 0;
+          protCharIndex = 0;
+          protCurrentText = "";
           break;
         case "biometrics":
           // First expand the container
