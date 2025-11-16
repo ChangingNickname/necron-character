@@ -52,7 +52,6 @@
 
     .views.expanded {
       height: 500px;
-      overflow-y: auto;
     }
 
     .views-inner {
@@ -79,12 +78,21 @@
       margin-bottom: 20px;
     }
 
+    #view-protocols {
+      padding-top: 240px;
+    }
+
+    #view-protocols .buttons-row {
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
     .terminal-body {
       white-space: pre-wrap;
       font-size: 16px;
       line-height: 1.4;
       min-height: 190px;
-      overflow-y: hidden;
+      overflow-y: auto;
     }
 
     .cursor {
@@ -250,6 +258,17 @@
 
             <div id="biometrics-body" class="terminal-body"></div>
           </section>
+
+          <!-- ====== ЭКРАН ПРОТОКОЛОВ ====== -->
+          <section class="view" id="view-protocols">
+            <div class="buttons-row">
+              <button class="nav-btn back" data-target="overview">
+                &laquo; ВЕРНУТЬСЯ К ОБЗОРУ ФАЙЛА
+              </button>
+            </div>
+
+            <div id="protocols-body" class="terminal-body"></div>
+          </section>
         </div>
       </div>
     </div>
@@ -285,6 +304,19 @@
       "   В ПОДЧИНЕНИИ: РЕГЕНТУ ТИРАНХУ",
       "",
       ">> БИОМЕТРИЧЕСКОЕ ДЕЛО ГОТОВО К ПРОСМОТРУ."
+    ];
+
+    /* ---------- ТЕКСТ ПРОТОКОЛОВ ---------- */
+    const protocolsLines = [
+      ">> ДОСТУП К ПОДРАЗДЕЛУ: ПРОТОКОЛЫ...",
+      ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
+      ">> ЗАГРУЗКА ПРОТОКОЛОВ ЛИЧ-СТРАЖА...",
+      "",
+      "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА",
+      "",
+      "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖИТЬ НЕКРОНОВ",
+      "",
+      ">> СПИСОК ПРОТОКОЛОВ ГОТОВ К ПРОСМОТРУ."
     ];
 
     const typingSpeed = 15;
@@ -390,6 +422,54 @@
       biometricsBody.appendChild(biometricsCursor);
     }
 
+    /* ---------- ПРОТОКОЛЫ: АНИМАЦИЯ ПЕЧАТИ ---------- */
+    const protocolsBody = document.getElementById("protocols-body");
+    const protocolsCursor = document.createElement("span");
+    protocolsCursor.className = "cursor";
+
+    let protLineIndex = 0;
+    let protCharIndex = 0;
+    let protCurrentText = "";
+    let protocolsStarted = false;
+
+    function startProtocolsTyping() {
+      if (protocolsStarted) return;
+      protocolsStarted = true;
+
+      protocolsBody.innerHTML = "";
+      protLineIndex = 0;
+      protCharIndex = 0;
+      protCurrentText = "";
+      protocolsBody.appendChild(protocolsCursor);
+      typeProtocols();
+    }
+
+    function typeProtocols() {
+      const line = protocolsLines[protLineIndex];
+
+      if (protCharIndex < line.length) {
+        protCurrentText += line[protCharIndex];
+        renderProtocols();
+        protCharIndex++;
+        setTimeout(typeProtocols, typingSpeed);
+      } else {
+        protCurrentText += "\n";
+        renderProtocols();
+        protLineIndex++;
+        protCharIndex = 0;
+
+        if (protLineIndex < protocolsLines.length) {
+          setTimeout(typeProtocols, linePause);
+        }
+      }
+    }
+
+    function renderProtocols() {
+      protocolsBody.innerHTML = "";
+      protocolsBody.appendChild(document.createTextNode(protCurrentText));
+      protocolsBody.appendChild(protocolsCursor);
+    }
+
     /* ---------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ (СЛАЙД ВВЕРХ/ВНИЗ) ---------- */
     const viewsInner = document.getElementById("views-inner");
     const viewsContainer = document.querySelector(".views");
@@ -415,6 +495,16 @@
           // Запустить печать после завершения слайда
           setTimeout(startBiometricsTyping, 670);
           break;
+        case "protocols":
+          // First expand the container
+          viewsContainer.classList.add("expanded");
+          // Then slide after a brief moment (1000px = 2 views down)
+          setTimeout(() => {
+            viewsInner.style.transform = "translateY(-1000px)";
+          }, 50);
+          // Запустить печать после завершения слайда
+          setTimeout(startProtocolsTyping, 670);
+          break;
         default:
           // остальные пока-заглушки
           alert("Раздел \"" + target + "\" ещё не активирован.");
@@ -430,7 +520,7 @@
       if (!target) return;
 
       e.preventDefault();
-      if (target === "biometrics" || target === "overview") {
+      if (target === "biometrics" || target === "overview" || target === "protocols") {
         goToView(target);
       } else {
         goToView(target);
