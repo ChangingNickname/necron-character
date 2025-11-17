@@ -1106,6 +1106,7 @@
       if (dossierCharIndex < line.length) {
         dossierCurrentText += line[dossierCharIndex];
         renderDossier();
+        playTextSound()
         dossierCharIndex++;
         addTypingTimer(typeDossier, typingSpeed);
       } else {
