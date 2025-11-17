@@ -364,6 +364,19 @@
 
   <script>
     /* ---------- MATRIX BACKGROUND ---------- */
+    let globalTypingTimers = [];
+
+    function addTypingTimer(fn, delay) {
+      const id = setTimeout(fn, delay);
+      globalTypingTimers.push(id);
+      return id;
+    }
+
+    function clearAllTypingTimers() {
+      globalTypingTimers.forEach(id => clearTimeout(id));
+      globalTypingTimers = [];
+    }
+
     const canvas = document.getElementById("matrixCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -556,6 +569,20 @@
     const typingSpeed = 1;
     const linePause = 2;
 
+    /* ---------- ГЛОБАЛЬНАЯ СИСТЕМА УПРАВЛЕНИЯ ТАЙМЕРАМИ ---------- */
+    let allTypingTimers = [];
+
+    function addTypingTimer(fn, delay) {
+      const id = setTimeout(fn, delay);
+      allTypingTimers.push(id);
+      return id;
+    }
+
+    function clearAllTypingTimers() {
+      allTypingTimers.forEach(id => clearTimeout(id));
+      allTypingTimers = [];
+    }
+
     /* ---------- ОБЗОР: АНИМАЦИЯ ПЕЧАТИ ---------- */
     const overviewBody = document.getElementById("overview-body");
     const overviewCursor = document.createElement("span");
@@ -573,7 +600,7 @@
         ovCurrentText += line[ovCharIndex];
         renderOverview();
         ovCharIndex++;
-        setTimeout(typeOverview, typingSpeed);
+        addTypingTimer(typeOverview, typingSpeed);
       } else {
         ovCurrentText += "\n";
         renderOverview();
@@ -581,7 +608,7 @@
         ovCharIndex = 0;
 
         if (ovLineIndex < overviewLines.length) {
-          setTimeout(typeOverview, linePause);
+          addTypingTimer(typeOverview, linePause);
         } else {
           showOverviewButtons();
         }
@@ -632,7 +659,7 @@
         bioCurrentText += bioCharIndex < line.length ? line[bioCharIndex] : "";
         renderBiometrics();
         bioCharIndex++;
-        setTimeout(typeBiometrics, typingSpeed);
+        addTypingTimer(typeBiometrics, typingSpeed);
       } else {
         bioCurrentText += "\n";
         renderBiometrics();
@@ -640,7 +667,7 @@
         bioCharIndex = 0;
 
         if (bioLineIndex < biometricsLines.length) {
-          setTimeout(typeBiometrics, linePause);
+          addTypingTimer(typeBiometrics, linePause);
         }
       }
     }
@@ -754,7 +781,7 @@
         phCurrentText += line[phCharIndex];
         renderProtocolsHeader();
         phCharIndex++;
-        setTimeout(typeProtocolsHeader, typingSpeed);
+        addTypingTimer(typeProtocolsHeader, typingSpeed);
       } else {
         phCurrentText += "\n";
         renderProtocolsHeader();
@@ -762,7 +789,7 @@
         phCharIndex = 0;
 
         if (phLineIndex < protocolsHeaderLines.length) {
-          setTimeout(typeProtocolsHeader, linePause);
+          addTypingTimer(typeProtocolsHeader, linePause);
         } else {
           protocolsBody.removeChild(protocolsCursor);
           const dyn = document.createElement("div");
@@ -863,7 +890,7 @@
         dossierCurrentText += line[dossierCharIndex];
         renderDossier();
         dossierCharIndex++;
-        setTimeout(typeDossier, typingSpeed);
+        addTypingTimer(typeDossier, typingSpeed);
       } else {
         dossierCurrentText += "\n";
         renderDossier();
@@ -871,7 +898,7 @@
         dossierCharIndex = 0;
 
         if (dossierLineIndex < dossierLines.length) {
-          setTimeout(typeDossier, linePause);
+          addTypingTimer(typeDossier, linePause);
         }
       }
     }
@@ -921,7 +948,7 @@
         attachmentCurrentText += line[attachmentCharIndex];
         renderAttachment();
         attachmentCharIndex++;
-        setTimeout(typeAttachment, typingSpeed);
+        addTypingTimer(typeAttachment, typingSpeed);
       } else {
         attachmentCurrentText += "\n";
         renderAttachment();
@@ -929,7 +956,7 @@
         attachmentCharIndex = 0;
 
         if (attachmentLineIndex < attachmentLines.length) {
-          setTimeout(typeAttachment, linePause);
+          addTypingTimer(typeAttachment, linePause);
         } else {
           // печать закончилась — курсор оставляем / убираем по вкусу
           // и показываем картинку
@@ -962,19 +989,19 @@
             viewsContainer.classList.remove("expanded");
           }, 600);
 
+          clearAllTypingTimers();
           clearProtocolsTimers();
 
           // сбрасываем все экраны
           biometricsBody.innerHTML = "";
           protocolsBody.innerHTML = "";
           dossierBody.innerHTML = "";
-          attachmentBody.innerHTML = "";       // можно оставить или удалить
+          
+          // НЕ очищаем attachmentBody полностью, только текст
           if (attachmentText) {
             attachmentText.innerHTML = "";
           }
           attachmentStarted = false;
-
-
 
           biometricsStarted = false;
           protocolsStarted = false;
@@ -989,6 +1016,9 @@
           phLineIndex = phCharIndex = 0;
           phCurrentText = "";
 
+          attachmentLineIndex = attachmentCharIndex = 0;
+          attachmentCurrentText = "";
+
           if (attachmentImageWrapper) {
             attachmentImageWrapper.classList.remove("show");
           }
@@ -999,7 +1029,7 @@
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-500px)";
           }, 50);
-          setTimeout(startBiometricsTyping, 670);
+          addTypingTimer(startBiometricsTyping, 670);
           break;
 
         case "protocols":
@@ -1007,7 +1037,7 @@
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-1000px)";
           }, 50);
-          setTimeout(startProtocolsTyping, 670);
+          addTypingTimer(startProtocolsTyping, 670);
           break;
 
         case "dossier":
@@ -1015,7 +1045,7 @@
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-1500px)";
           }, 50);
-          setTimeout(startDossierTyping, 670);
+          addTypingTimer(startDossierTyping, 670);
           break;
 
         /* <<< НОВОЕ: переход к странице Вложения */
@@ -1025,7 +1055,7 @@
             // это пятый экран (0, -500, -1000, -1500, -2000)
             viewsInner.style.transform = "translateY(-2000px)";
           }, 50);
-          setTimeout(startAttachmentTyping, 670);
+          addTypingTimer(startAttachmentTyping, 670);
           break;
 
         default:
