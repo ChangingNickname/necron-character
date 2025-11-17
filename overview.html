@@ -719,7 +719,7 @@
       const now = Date.now();
 
       // Чтоб не был адский треск — ограничиваем до одного звука каждые ~35ms
-      if (now - lastTextSoundTime < 50) return;
+      if (now - lastTextSoundTime < 60) return;
       lastTextSoundTime = now;
 
       try {
