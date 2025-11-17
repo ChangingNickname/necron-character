@@ -376,7 +376,7 @@
 <body>
   <canvas id="matrixCanvas"></canvas>
   <audio id="text-sound" src="text-sound.mp3" preload="auto"></audio>
-
+  <audio id="protocol-sound" src="protocol-sound.mp3" preload="auto"></audio>
   <div id="init-overlay" class="init-overlay">
     <div class="init-message">
       >> НАЖМИТЕ ЛЮБУЮ КЛАВИШУ ИЛИ КНОПКУ МЫШИ ДЛЯ ИНИЦИАЛИЗАЦИИ АРХИВА...
@@ -725,6 +725,25 @@
       }
     }
 
+    /* ---------- ЗВУК ДЛЯ ПРОТОКОЛОВ (МИГАНИЕ) ---------- */
+    let lastProtocolSoundTime = 0;
+
+    function playProtocolSound() {
+      const audio = document.getElementById("protocol-sound");
+      if (!audio) return;
+
+      audio.volume = 0.25; // set your desired volume here
+
+      const now = Date.now();
+      if (now - lastProtocolSoundTime < 150) return; // limit spam
+      lastProtocolSoundTime = now;
+
+      try {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+
 
     /* ---------- ГЛОБАЛЬНАЯ СИСТЕМА УПРАВЛЕНИЯ ТАЙМЕРАМИ ---------- */
     let allTypingTimers = [];
@@ -976,16 +995,20 @@
       scheduleProtocols(() => {
         dyn.innerHTML =
           "   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
+        playProtocolSound(); // 🔊
       }, (t += 200));
+      
 
       scheduleProtocols(() => {
         dyn.innerHTML =
           `<span class="protocol-red">   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ. ПЕРЕЗАПИСЬ ПРИОРИТЕТА.</span>`;
+        playProtocolSound(); // 🔊
       }, (t += 1200));
 
       scheduleProtocols(() => {
         dyn.innerHTML =
           `<span class="protocol-red protocol-strike">   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ. ПЕРЕЗАПИСЬ ПРИОРИТЕТА.</span>`;
+        playProtocolSound(); // 🔊
       }, (t += 1200));
 
       scheduleProtocols(() => {
@@ -993,6 +1016,7 @@
           "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА.<br>" +
           `      ПРИКАЗ РЕГЕНТА: ${currentOrder}<br><br>` +
           "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
+        playTextSound();
       }, (t += 1200));
 
       scheduleProtocols(() => {
@@ -1000,6 +1024,7 @@
           "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА. ВЫПОЛНЕНО.<br>" +
           `      ПРИКАЗ РЕГЕНТА: ${currentOrder}<br><br>` +
           "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
+        playTextSound();
       }, (t += 3500));
 
       scheduleProtocols(() => {
@@ -1007,11 +1032,13 @@
           `   <span class="protocol-strike">ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА. ВЫПОЛНЕНО.</span><br>` +
           `   <span class="protocol-strike">   ПРИКАЗ РЕГЕНТА: ${currentOrder}</span><br><br>` +
           "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
+        playTextSound();
       }, (t += 1500));
 
       scheduleProtocols(() => {
         dyn.innerHTML =
           "   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
+        playTextSound();
       }, (t += 1500));
 
       scheduleProtocols(() => {
