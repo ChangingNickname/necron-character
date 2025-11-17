@@ -63,7 +63,7 @@
     }
 
     .views.expanded {
-      /* height: 700px; */ /* Убрали фиксированную высоту - будет подстраиваться под содержимое */
+      height: 500px;
     }
 
     .views-inner {
@@ -81,15 +81,18 @@
       padding-top: 4px;
     }
 
+    /* <<< НОВОЕ: добавили view-attachment во все эти группы */
     #view-biometrics,
     #view-protocols,
-    #view-dossier {              /* <<< НОВОЕ: добавили dossier */
+    #view-dossier,
+    #view-attachment {
       padding-top: 255px;
     }
 
     #view-biometrics .buttons-row,
     #view-protocols .buttons-row,
-    #view-dossier .buttons-row { /* <<< НОВОЕ: общий стиль */
+    #view-dossier .buttons-row,
+    #view-attachment .buttons-row {
       margin-top: 0;
       margin-bottom: 20px;
     }
@@ -100,21 +103,14 @@
       font-size: 16px;
       line-height: 1.4;
       min-height: 190px;
-      overflow-y: hidden;        /* <<< ВАЖНО: тут скролл убираем */
+      overflow-y: hidden;
     }
 
     /* СКРОЛЛ ТОЛЬКО ДЛЯ ЛИЧНОГО ДЕЛА */
-    #dossier-body {               /* <<< НОВОЕ */
-      max-height: 400px;          /* ограничиваем высоту */
-      overflow-y: auto;           /* внутренний скролл только здесь */
-    }
-
-    #attachmentCanvas {
-      width: 100%;
-      max-width: 800px;
-      border: 1px solid #00aa44;
-      margin-top: 20px;
-      box-shadow: 0 0 12px #00ff66;
+    #dossier-body,
+    #attachment-body {
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     .cursor {
@@ -220,7 +216,7 @@
         width: 100%;
         min-height: 260px;
         padding-top: 0;
-        display: flex;              /* делаем колонку */
+        display: flex;
         flex-direction: column;
       }
 
@@ -228,11 +224,12 @@
         white-space: pre-wrap;
         font-size: 16px;
         line-height: 1.4;
-        flex: 1;                    /* занимает всё свободное место */
-        overflow-y: hidden;         /* по умолчанию без скролла */
+        flex: 1;
+        overflow-y: hidden;
       }
 
-      #dossier-body {           /* но для личного дела включаем */
+      #dossier-body,
+      #attachment-body {
         overflow-y: auto;
       }
 
@@ -255,6 +252,26 @@
       opacity: 0.85;
     }
 
+    /* <<< НОВОЕ: оформление блока с картинкой */
+    .attachment-image-wrapper {
+      margin-top: 20px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px) scale(1.05);
+      filter: drop-shadow(0 0 18px #00aa44);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .attachment-image-wrapper.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .attachment-image-wrapper img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #00aa44;
+    }
   </style>
 </head>
 <body>
@@ -283,8 +300,10 @@
               <button class="nav-btn" data-target="dossier">
                 Личное Дело
               </button>
-              <button class="nav-btn" data-target="attachments">
-                Приложения
+
+              <!-- <<< НОВОЕ: кнопка для страницы Вложения -->
+              <button class="nav-btn" data-target="attachment">
+                Вложения
               </button>
             </div>
           </section>
@@ -310,7 +329,7 @@
           </section>
 
           <!-- ====== ЭКРАН ЛИЧНОГО ДЕЛА ====== -->
-          <section class="view" id="view-dossier">   <!-- <<< НОВОЕ -->
+          <section class="view" id="view-dossier">
             <div class="buttons-row">
               <button class="nav-btn back" data-target="overview">
                 &laquo; ВЕРНУТЬСЯ К ОБЗОРУ ФАЙЛА
@@ -319,18 +338,25 @@
             <div id="dossier-body" class="terminal-body"></div>
           </section>
 
-          <!-- ====== ЭКРАН ПРИЛОЖЕНИЙ ====== -->
-          <section class="view" id="view-attachments">
+          <!-- ====== НОВЫЙ ЭКРАН ВИЗУАЛЬНОГО ВЛОЖЕНИЯ ====== -->
+          <section class="view" id="view-attachment">
             <div class="buttons-row">
               <button class="nav-btn back" data-target="overview">
                 &laquo; ВЕРНУТЬСЯ К ОБЗОРУ ФАЙЛА
               </button>
             </div>
-            <div id="attachments-body" class="terminal-body"></div>
-            <div id="apps-image-container"
-                 style="width:100%; overflow:hidden; margin-top:20px;"></div>
-            <canvas id="attachmentCanvas" width="600" height="400" style="display:none;"></canvas>
+
+            <!-- ВЕСЬ КОНТЕНТ ВНУТРИ ОДНОГО СКРОЛЛ-БЛОКА -->
+            <div id="attachment-body" class="terminal-body">
+              <div id="attachment-text"></div>
+
+              <!-- картинка появится после печати текста -->
+              <div id="attachment-image-wrapper" class="attachment-image-wrapper">
+                <img src="attachment1.png" alt="Вложение: За'аргул, Лич-Страж">
+              </div>
+            </div>
           </section>
+
         </div>
       </div>
     </div>
@@ -386,7 +412,7 @@
       ">> ПРЕДВАРИТЕЛЬНЫЙ ОБЗОР ФАЙЛА ЗАГРУЖЕН."
     ];
 
-    /* ---------- ТЕКСТ БИОМЕТРИИ / АВТОРИЗАЦИИ ---------- */
+    /* ---------- ТЕКСТ БИОМЕТРИИ ---------- */
     const biometricsLines = [
       ">> ДОСТУП К ПОДРАЗДЕЛУ: БИОМЕТРИЧЕСКАЯ ИДЕНТИФИКАЦИЯ...",
       ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
@@ -407,19 +433,6 @@
       "",
       ">> КОНЕЦ БИОМЕТРИЧЕСКОЙ ИДЕНТИФИКАЦИИ."
     ];
-
-    /* ---------- ТЕКСТ ПРОТОКОЛОВ ---------- */
-    // const protocolsLines = [
-    //   ">> ДОСТУП К ПОДРАЗДЕЛУ: ПРОТОКОЛЫ...",
-    //   ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
-    //   ">> ЗАГРУЗКА ПРОТОКОЛОВ ЛИЧ-СТРАЖА...",
-    //   "",
-    //   "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА.",
-    //   "",
-    //   "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ ДЕФЕКТНЫХ НЕКРОН-ЕДИНИЦ.",
-    //   "",
-    //   ">> СПИСОК ПРОТОКОЛОВ ГОТОВ К ПРОСМОТРУ."
-    // ];
 
     /* ---------- ТЕКСТ ЛИЧНОГО ДЕЛА ---------- */
     const dossierLines = [
@@ -451,7 +464,7 @@
       "     траектории войн, и — главное — тень, нависшую над ними всеми.",
       "",
       "     > Когда К’тан протянули свой “дар”, и некронтиры дрогнули перед обещанной вечностью,",
-      "     Слова За’аргула прозвучали как кощунство — и как угроза планам великих династий.",
+      "     Слова За’аргула прозвучали как кощунство — и как угрозa планам великих династий.",
       "     Его слова могли убедить Тиранха отказаться и пойти против воли Молчаливого Короля.",
       "     > Чтобы заставить замолчать того, кто говорил об ужасах будущего,",
       "     враги Тиранха пленили За’аргула в биосаркофаг и заставили его пройти био-трансформацию.",
@@ -518,12 +531,23 @@
       ">> ЛИЧНОЕ ДЕЛО: ЗАГРУЗКА ЗАВЕРШЕНА."
     ];
 
-    /* ---------- ТЕКСТ ПРИЛОЖЕНИЙ ---------- */
+    /* ---------- НОВЫЙ ТЕКСТ ДЛЯ СТРАНИЦЫ ВЛОЖЕНИЯ ---------- */
     const attachmentLines = [
-      ">> ДОСТУП К ПОДРАЗДЕЛУ: ПРИЛОЖЕНИЯ...",
+      ">> ДОСТУП К ПОДРАЗДЕЛУ: ВИЗУАЛЬНОЕ ВЛОЖЕНИЕ...",
       ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
-      ">> ЗАГРУЗКА ПРИЛОЖЕНИЯ-1...",
-      ""
+      ">> ЗАГРУЗКА ГОЛО-ИЗОБРАЖЕНИЯ: ЗА'АРГУЛ, ЛИЧ-СТРАЖ...",
+      "",
+      "   ПРЕДУПРЕЖДЕНИЕ:",
+      "     > ДАННОЕ ИЗОБРАЖЕНИЕ ЗАФИКСИРОВАНО В МОМЕНТ АКТИВАЦИИ БОЕВЫХ ПРОТОКОЛОВ.",
+      "     > ДОСТУП РЕКОМЕНДУЕТСЯ ТОЛЬКО ОПЕРАТОРАМ УРОВНЯ &Omega;-ВЕРИТАС И ВЫШЕ.",
+      "",
+      "   ИДЁТ ВОССТАНОВЛЕНИЕ ВИЗУАЛЬНЫХ СЛОЁВ...",
+      "   [█.........] 10%",
+      "   [████......] 43%",
+      "   [████████..] 86%",
+      "   [██████████] 100%",
+      "",
+      ">> ВИЗУАЛЬНОЕ ВЛОЖЕНИЕ ГОТОВО К ПРОСМОТРУ."
     ];
 
     // const typingSpeed = 15;
@@ -605,7 +629,7 @@
       const line = biometricsLines[bioLineIndex];
 
       if (bioCharIndex < line.length) {
-        bioCurrentText += line[bioCharIndex];
+        bioCurrentText += bioCharIndex < line.length ? line[bioCharIndex] : "";
         renderBiometrics();
         bioCharIndex++;
         setTimeout(typeBiometrics, typingSpeed);
@@ -627,8 +651,7 @@
       biometricsBody.appendChild(biometricsCursor);
     }
 
-        // Случайные приказы Регента
-        /* ---------- ПРОТОКОЛЫ: АНИМАЦИЯ ---------- */
+    /* ---------- ПРОТОКОЛЫ ---------- */
     const protocolsBody = document.getElementById("protocols-body");
     const protocolsCursor = document.createElement("span");
     protocolsCursor.className = "cursor";
@@ -643,12 +666,10 @@
     let protocolsStarted = false;
     let protocolsTimers = [];
 
-    // индексы для печати заголовка
     let phLineIndex = 0;
     let phCharIndex = 0;
     let phCurrentText = "";
 
-    /* ---------- СЛУЧАЙНЫЕ ПРИКАЗЫ РЕГЕНТА ---------- */
     const necronOrders = [
       "СТЕРЕТЬ ЛЮБОЕ ОРГАНИЧЕСКОЕ ПРИСУТСТВИЕ В СЕКТОРЕ VII.",
       "ИЗЪЯТЬ ВСЕ КСЕНОТЕХ-АРТЕФАКТЫ ДЛЯ ПОСЛЕДУЮЩЕЙ ПЕРЕРАБОТКИ.",
@@ -694,14 +715,12 @@
       "РАЗВЕРНУТЬ СЕТЬ СКРЫТЫХ ФАЗОВЫХ МИН.",
       "ПОДГОТОВИТЬ ТРОННЫЙ МИР К ВИЗИТУ ОСКОЛКА К'ТАН.",
       "УСТАНОВИТЬ МАЯК ВЕЧНОГО ВЛАДЫЧЕСТВА РЕГЕНТА НАД ЭТИМ СЕКТОРОМ."
-      // можешь добавить ещё, сколько захочешь
     ];
 
     function getRandomOrder() {
       return necronOrders[Math.floor(Math.random() * necronOrders.length)];
     }
 
-    /* ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---------- */
     function clearProtocolsTimers() {
       protocolsTimers.forEach(id => clearTimeout(id));
       protocolsTimers = [];
@@ -712,7 +731,6 @@
       protocolsTimers.push(id);
     }
 
-    /* ---------- ЗАПУСК ПРОТОКОЛОВ ---------- */
     function startProtocolsTyping() {
       if (protocolsStarted) return;
       protocolsStarted = true;
@@ -727,7 +745,6 @@
       typeProtocolsHeader();
     }
 
-    /* ---------- ПЕЧАТЬ ЗАГОЛОВКА ПРОТОКОЛОВ ---------- */
     function typeProtocolsHeader() {
       if (!protocolsStarted) return;
 
@@ -747,12 +764,9 @@
         if (phLineIndex < protocolsHeaderLines.length) {
           setTimeout(typeProtocolsHeader, linePause);
         } else {
-          // заголовок закончен — убираем курсор и запускаем цикл состояний
           protocolsBody.removeChild(protocolsCursor);
-
           const dyn = document.createElement("div");
           protocolsBody.appendChild(dyn);
-
           runProtocolsStates(dyn);
         }
       }
@@ -764,7 +778,6 @@
       protocolsBody.appendChild(protocolsCursor);
     }
 
-    /* ---------- ЦИКЛ СОСТОЯНИЙ ПРОТОКОЛОВ ---------- */
     function runProtocolsStates(dyn) {
       if (!protocolsStarted) return;
 
@@ -773,33 +786,28 @@
 
       const currentOrder = getRandomOrder().toUpperCase();
 
-      // 1) исходный протокол
       scheduleProtocols(() => {
         dyn.innerHTML =
           "   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
       }, (t += 200));
 
-      // 2) красный + ПЕРЕЗАПИСЬ ПРИОРИТЕТА
       scheduleProtocols(() => {
         dyn.innerHTML =
           `<span class="protocol-red">   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ. ПЕРЕЗАПИСЬ ПРИОРИТЕТА.</span>`;
       }, (t += 1200));
 
-      // 3) красный зачёркнутый
       scheduleProtocols(() => {
         dyn.innerHTML =
           `<span class="protocol-red protocol-strike">   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ. ПЕРЕЗАПИСЬ ПРИОРИТЕТА.</span>`;
       }, (t += 1200));
 
-      // 4) новый набор протоколов + ПРИКАЗ РЕГЕНТА (длинная пауза перед этим)
       scheduleProtocols(() => {
         dyn.innerHTML =
           "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА.<br>" +
           `      ПРИКАЗ РЕГЕНТА: ${currentOrder}<br><br>` +
           "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
-      }, (t += 1200));   // <<< УВЕЛИЧЕННАЯ ПАУЗА
+      }, (t += 1200));
 
-      // 5) ВЫПОЛНЕНО + тот же приказ
       scheduleProtocols(() => {
         dyn.innerHTML =
           "   ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА. ВЫПОЛНЕНО.<br>" +
@@ -807,7 +815,6 @@
           "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
       }, (t += 3500));
 
-      // 6) зачёркиваем ПЕРВЫЙ ПРОТОКОЛ и ПРИКАЗ
       scheduleProtocols(() => {
         dyn.innerHTML =
           `   <span class="protocol-strike">ПЕРВЫЙ ПРОТОКОЛ: ВЫПОЛНЕНИЕ ПРИКАЗА РЕГЕНТА. ВЫПОЛНЕНО.</span><br>` +
@@ -815,20 +822,17 @@
           "   ВТОРОЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
       }, (t += 1500));
 
-      // 7) итог — только один протокол
       scheduleProtocols(() => {
         dyn.innerHTML =
           "   ПЕРВЫЙ ПРОТОКОЛ: УНИЧТОЖЕНИЕ НЕКРОН-ЕДИНИЦ.";
       }, (t += 1500));
 
-      // 8) перезапускаем цикл
       scheduleProtocols(() => {
         if (protocolsStarted) {
           runProtocolsStates(dyn);
         }
       }, (t += 2000));
     }
-
 
     /* ---------- ЛИЧНОЕ ДЕЛО ---------- */
     const dossierBody = document.getElementById("dossier-body");
@@ -878,141 +882,72 @@
       dossierBody.appendChild(dossierCursor);
     }
 
-    /* ---------- ПРИЛОЖЕНИЯ ---------- */
-    const attachmentsBody = document.getElementById("attachments-body");
-    const attachmentsCursor = document.createElement("span");
-    attachmentsCursor.className = "cursor";
+    /* ---------- НОВОЕ: ВИЗУАЛЬНОЕ ВЛОЖЕНИЕ (ТЕКСТ + КАРТИНКА) ---------- */
+    const attachmentBody = document.getElementById("attachment-body");
+    const attachmentText = document.getElementById("attachment-text");
+    const attachmentCursor = document.createElement("span");
+    attachmentCursor.className = "cursor";
 
-    let attLineIndex = 0;
-    let attCharIndex = 0;
-    let attCurrentText = "";
-    let attachmentsStarted = false;
+    const attachmentImageWrapper = document.getElementById("attachment-image-wrapper");
 
-    function startAttachmentsTyping() {
-      if (attachmentsStarted) return;
-      attachmentsStarted = true;
+    let attachmentLineIndex = 0;
+    let attachmentCharIndex = 0;
+    let attachmentCurrentText = "";
+    let attachmentStarted = false;
 
-      attachmentsBody.innerHTML = "";
-      attLineIndex = 0;
-      attCharIndex = 0;
-      attCurrentText = "";
-      attachmentsBody.appendChild(attachmentsCursor);
+    function startAttachmentTyping() {
+      if (attachmentStarted) return;
+      attachmentStarted = true;
 
-      typeAttachments();
+      // очищаем только текст, а не весь блок
+      attachmentText.innerHTML = "";
+      attachmentLineIndex = 0;
+      attachmentCharIndex = 0;
+      attachmentCurrentText = "";
+      attachmentText.appendChild(attachmentCursor);
+
+      if (attachmentImageWrapper) {
+        attachmentImageWrapper.classList.remove("show");
+      }
+
+      typeAttachment();
     }
 
-    function typeAttachments() {
-      const line = attachmentLines[attLineIndex];
 
-      if (attCharIndex < line.length) {
-        attCurrentText += line[attCharIndex];
-        renderAttachments();
-        attCharIndex++;
-        setTimeout(typeAttachments, typingSpeed);
+    function typeAttachment() {
+      const line = attachmentLines[attachmentLineIndex];
+
+      if (attachmentCharIndex < line.length) {
+        attachmentCurrentText += line[attachmentCharIndex];
+        renderAttachment();
+        attachmentCharIndex++;
+        setTimeout(typeAttachment, typingSpeed);
       } else {
-        attCurrentText += "\n";
-        renderAttachments();
-        attLineIndex++;
-        attCharIndex = 0;
+        attachmentCurrentText += "\n";
+        renderAttachment();
+        attachmentLineIndex++;
+        attachmentCharIndex = 0;
 
-        if (attLineIndex < attachmentLines.length) {
-          setTimeout(typeAttachments, linePause);
+        if (attachmentLineIndex < attachmentLines.length) {
+          setTimeout(typeAttachment, linePause);
         } else {
-          setTimeout(startImageReveal, 600);
+          // печать закончилась — курсор оставляем / убираем по вкусу
+          // и показываем картинку
+          showAttachmentImage();
         }
       }
     }
 
-    function renderAttachments() {
-      attachmentsBody.innerHTML = "";
-      attachmentsBody.appendChild(document.createTextNode(attCurrentText));
-      attachmentsBody.appendChild(attachmentsCursor);
-    } 
+    function renderAttachment() {
+      attachmentText.innerHTML = "";
+      attachmentText.appendChild(document.createTextNode(attachmentCurrentText));
+      attachmentText.appendChild(attachmentCursor);
+    }
 
-    function startImageReveal() {
-      const cont = document.getElementById("apps-image-container");
-      if (!cont) return;
 
-      // Очистить прошлое содержимое
-      cont.innerHTML = "";
-
-      const img = new Image();
-      img.src = "attachment1.jpg";   // <-- правильное имя файла
-
-      img.onload = function () {
-        const containerWidth = cont.clientWidth || 800;
-
-        // Масштабируем изображение по ширине контейнера
-        const scale = containerWidth / img.naturalWidth;
-        const finalHeight = img.naturalHeight * scale;
-
-        // Подстраиваем высоту контейнера под картинку (минимум 500)
-        const viewsContainer = document.querySelector(".views");
-        if (viewsContainer) {
-          viewsContainer.style.height = Math.max(500, finalHeight + 200) + "px";
-        }
-
-        // Видимый canvas
-        const canvas = document.createElement("canvas");
-        canvas.width = containerWidth;
-        canvas.height = finalHeight;
-        cont.appendChild(canvas);
-        const ctx = canvas.getContext("2d");
-
-        // Offscreen-canvas, на который один раз рисуем масштабированное изображение
-        const off = document.createElement("canvas");
-        off.width = containerWidth;
-        off.height = finalHeight;
-        const offCtx = off.getContext("2d");
-
-        // Полностью масштабированная картинка
-        offCtx.drawImage(img, 0, 0, containerWidth, finalHeight);
-
-        let revealed = 0;                 // сколько пикселей по высоте уже "открыто"
-        const speed = 4;                  // скорость раскрытия (px за кадр)
-        const glyphStepX = 16;            // расстояние между столбцами символов
-
-        function frame() {
-          const next = Math.min(revealed + speed, finalHeight);
-
-          // Копируем сверху до next всё изображение с offscreen-canvas
-          ctx.drawImage(off, 0, 0, canvas.width, next, 0, 0, canvas.width, next);
-
-          // Поверх – "матрица" только в новой полоске
-          ctx.save();
-          ctx.globalAlpha = 0.45;        // <= ВАЖНО: картинка под символами видна
-          ctx.fillStyle = "#00ff66";
-          ctx.font = "14px Consolas";
-
-          for (let x = 0; x < canvas.width; x += glyphStepX) {
-            if (Math.random() < 0.25) {
-              const y = revealed + Math.random() * (next - revealed);
-              ctx.fillText(
-                String.fromCharCode(0x30A0 + (Math.random() * 96)),
-                x,
-                y
-              );
-            }
-          }
-
-          ctx.restore();
-
-          revealed = next;
-          if (revealed < finalHeight) {
-            requestAnimationFrame(frame);
-          } else {
-            // OPTIONAL: после полной загрузки можно чуть "почистить" картинку
-            // ctx.drawImage(off, 0, 0); // раскомментируй, если хочешь убрать символы
-          }
-        }
-
-        frame();
-      };
-
-      img.onerror = function () {
-        console.error("Failed to load image: attachment1.jpg");
-        cont.innerHTML = "<p style='color:#ff3333;'>ERROR: Failed to load attachment1.jpg</p>";
-      };
+    function showAttachmentImage() {
+      if (!attachmentImageWrapper) return;
+      attachmentImageWrapper.classList.add("show");
     }
 
     /* ---------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ ---------- */
@@ -1027,39 +962,40 @@
             viewsContainer.classList.remove("expanded");
           }, 600);
 
-          clearProtocolsTimers();   // <--- вот эта строка
-
+          clearProtocolsTimers();
 
           // сбрасываем все экраны
           biometricsBody.innerHTML = "";
           protocolsBody.innerHTML = "";
           dossierBody.innerHTML = "";
-          attachmentsBody.innerHTML = "";
+          attachmentBody.innerHTML = "";       // можно оставить или удалить
+          if (attachmentText) {
+            attachmentText.innerHTML = "";
+          }
+          attachmentStarted = false;
 
-          const canvas = document.getElementById("attachmentCanvas");
-          if (canvas) canvas.style.display = "none";
+
 
           biometricsStarted = false;
           protocolsStarted = false;
           dossierStarted = false;
-          attachmentsStarted = false;
 
           bioLineIndex = bioCharIndex = 0;
           bioCurrentText = "";
 
-          protLineIndex = protCharIndex = 0;
-          protCurrentText = "";
-
           dossierLineIndex = dossierCharIndex = 0;
           dossierCurrentText = "";
 
-          attLineIndex = attCharIndex = 0;
-          attCurrentText = "";
+          phLineIndex = phCharIndex = 0;
+          phCurrentText = "";
+
+          if (attachmentImageWrapper) {
+            attachmentImageWrapper.classList.remove("show");
+          }
           break;
 
         case "biometrics":
           viewsContainer.classList.add("expanded");
-          viewsContainer.style.height = "500px"; // Стандартная высота
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-500px)";
           }, 50);
@@ -1068,7 +1004,6 @@
 
         case "protocols":
           viewsContainer.classList.add("expanded");
-          viewsContainer.style.height = "500px"; // Стандартная высота
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-1000px)";
           }, 50);
@@ -1077,20 +1012,20 @@
 
         case "dossier":
           viewsContainer.classList.add("expanded");
-          viewsContainer.style.height = "500px"; // Стандартная высота
           setTimeout(() => {
             viewsInner.style.transform = "translateY(-1500px)";
           }, 50);
           setTimeout(startDossierTyping, 670);
           break;
 
-        case "attachments":
+        /* <<< НОВОЕ: переход к странице Вложения */
+        case "attachment":
           viewsContainer.classList.add("expanded");
-          // Высота будет установлена в startImageReveal
           setTimeout(() => {
+            // это пятый экран (0, -500, -1000, -1500, -2000)
             viewsInner.style.transform = "translateY(-2000px)";
           }, 50);
-          setTimeout(startAttachmentsTyping, 670);
+          setTimeout(startAttachmentTyping, 670);
           break;
 
         default:
@@ -1107,11 +1042,7 @@
       if (!target) return;
 
       e.preventDefault();
-      if (["biometrics", "overview", "protocols", "dossier", "attachments"].includes(target)) {
-        goToView(target);
-      } else {
-        goToView(target);
-      }
+      goToView(target);
     });
 
     /* ---------- ЗАПУСК ОБЗОРА ---------- */
