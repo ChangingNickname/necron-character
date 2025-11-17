@@ -272,6 +272,11 @@
       height: auto;
       border: 1px solid #00aa44;
     }
+
+    .nav-btn.hidden {
+      display: none;
+    }
+
   </style>
 </head>
 <body>
@@ -350,11 +355,18 @@
             <div id="attachment-body" class="terminal-body">
               <div id="attachment-text"></div>
 
-              <!-- картинка появится после печати текста -->
+              <!-- КНОПКА ДЛЯ ОТОБРАЖЕНИЯ КОНКРЕТНОГО ВЛОЖЕНИЯ -->
+              <div class="buttons-row">
+                <button class="nav-btn attachment-toggle" data-attachment="1">ПОКАЗАТЬ ВЛОЖЕНИЕ 1</button>
+              </div>  
+
+
+              <!-- картинка: появляется только после нажатия кнопки -->
               <div id="attachment-image-wrapper" class="attachment-image-wrapper">
                 <img src="attachment1.png" alt="Вложение: За'аргул, Лич-Страж">
               </div>
             </div>
+
           </section>
 
         </div>
@@ -545,14 +557,19 @@
     ];
 
     /* ---------- НОВЫЙ ТЕКСТ ДЛЯ СТРАНИЦЫ ВЛОЖЕНИЯ ---------- */
-    const attachmentLines = [
+    // Фаза 1: текст до предупреждения
+    const attachmentIntroLines = [
       ">> ДОСТУП К ПОДРАЗДЕЛУ: ВИЗУАЛЬНОЕ ВЛОЖЕНИЕ...",
       ">> ПОДТВЕРЖДЕНИЕ УРОВНЯ ДОПУСКА: ОДОБРЕНО.",
       ">> ЗАГРУЗКА ГОЛО-ИЗОБРАЖЕНИЯ: ЗА'АРГУЛ, ЛИЧ-СТРАЖ...",
-      "",
+      ""
+    ];
+
+    // Фаза 2: предупреждение + прогресс + финал
+    const attachmentDetailLines = [
       "   ПРЕДУПРЕЖДЕНИЕ:",
       "     > ДАННОЕ ИЗОБРАЖЕНИЕ ЗАФИКСИРОВАНО В МОМЕНТ АКТИВАЦИИ БОЕВЫХ ПРОТОКОЛОВ.",
-      "     > ДОСТУП РЕКОМЕНДУЕТСЯ ТОЛЬКО ОПЕРАТОРАМ УРОВНЯ &Omega;-ВЕРИТАС И ВЫШЕ.",
+      "     > ДОСТУП РЕКОМЕНДУЕТСЯ ТОЛЬКО ОПЕРАТОРАМ УРОВНЯ Ω-ВЕРИТАС И ВЫШЕ.",
       "",
       "   ИДЁТ ВОССТАНОВЛЕНИЕ ВИЗУАЛЬНЫХ СЛОЁВ...",
       "   [█.........] 10%",
@@ -562,6 +579,7 @@
       "",
       ">> ВИЗУАЛЬНОЕ ВЛОЖЕНИЕ ГОТОВО К ПРОСМОТРУ."
     ];
+
 
     // const typingSpeed = 15;
     // const linePause = 200;
@@ -921,12 +939,15 @@
     let attachmentCharIndex = 0;
     let attachmentCurrentText = "";
     let attachmentStarted = false;
+    let attachmentDetailsStarted = false;
+    let attachmentDetailLineIndex = 0;
+    let attachmentDetailCharIndex = 0;
+
 
     function startAttachmentTyping() {
       if (attachmentStarted) return;
       attachmentStarted = true;
 
-      // очищаем только текст, а не весь блок
       attachmentText.innerHTML = "";
       attachmentLineIndex = 0;
       attachmentCharIndex = 0;
@@ -937,30 +958,34 @@
         attachmentImageWrapper.classList.remove("show");
       }
 
-      typeAttachment();
+      typeAttachmentIntro();
     }
 
 
-    function typeAttachment() {
-      const line = attachmentLines[attachmentLineIndex];
+    function typeAttachmentIntro() {
+      const line = attachmentIntroLines[attachmentLineIndex];
 
       if (attachmentCharIndex < line.length) {
         attachmentCurrentText += line[attachmentCharIndex];
         renderAttachment();
         attachmentCharIndex++;
-        addTypingTimer(typeAttachment, typingSpeed);
+        addTypingTimer(typeAttachmentIntro, typingSpeed);
       } else {
         attachmentCurrentText += "\n";
         renderAttachment();
         attachmentLineIndex++;
         attachmentCharIndex = 0;
 
-        if (attachmentLineIndex < attachmentLines.length) {
-          addTypingTimer(typeAttachment, linePause);
+        if (attachmentLineIndex < attachmentIntroLines.length) {
+          addTypingTimer(typeAttachmentIntro, linePause);
         } else {
-          // печать закончилась — курсор оставляем / убираем по вкусу
-          // и показываем картинку
-          showAttachmentImage();
+          // Вводная часть закончилась — показываем кнопку "ПОКАЗАТЬ ВЛОЖЕНИЕ"
+          const attachButtons = document.querySelectorAll("#view-attachment .attachment-toggle");
+          attachButtons.forEach((btn, i) => {
+            setTimeout(() => {
+              btn.classList.add("show");
+            }, 150 * i);
+          });
         }
       }
     }
@@ -971,11 +996,48 @@
       attachmentText.appendChild(attachmentCursor);
     }
 
+    
+
 
     function showAttachmentImage() {
       if (!attachmentImageWrapper) return;
       attachmentImageWrapper.classList.add("show");
     }
+
+    function startAttachmentDetails() {
+      if (attachmentDetailsStarted) return;
+      attachmentDetailsStarted = true;
+
+      attachmentDetailLineIndex = 0;
+      attachmentDetailCharIndex = 0;
+
+      // продолжаем печатать, НЕ очищая attachmentCurrentText
+      typeAttachmentDetails();
+    }
+
+    function typeAttachmentDetails() {
+      const line = attachmentDetailLines[attachmentDetailLineIndex];
+
+      if (attachmentDetailCharIndex < line.length) {
+        attachmentCurrentText += line[attachmentDetailCharIndex];
+        renderAttachment();
+        attachmentDetailCharIndex++;
+        addTypingTimer(typeAttachmentDetails, typingSpeed);
+      } else {
+        attachmentCurrentText += "\n";
+        renderAttachment();
+        attachmentDetailLineIndex++;
+        attachmentDetailCharIndex = 0;
+
+        if (attachmentDetailLineIndex < attachmentDetailLines.length) {
+          addTypingTimer(typeAttachmentDetails, linePause);
+        } else {
+          // всё напечатано — показываем картинку
+          showAttachmentImage();
+        }
+      }
+    }
+
 
     /* ---------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ ---------- */
     const viewsInner = document.getElementById("views-inner");
@@ -1002,6 +1064,10 @@
             attachmentText.innerHTML = "";
           }
           attachmentStarted = false;
+          attachmentDetailsStarted = false;
+          attachmentLineIndex = attachmentCharIndex = 0;
+          attachmentDetailLineIndex = attachmentDetailCharIndex = 0;
+          attachmentCurrentText = "";
 
           biometricsStarted = false;
           protocolsStarted = false;
@@ -1016,8 +1082,6 @@
           phLineIndex = phCharIndex = 0;
           phCurrentText = "";
 
-          attachmentLineIndex = attachmentCharIndex = 0;
-          attachmentCurrentText = "";
 
           if (attachmentImageWrapper) {
             attachmentImageWrapper.classList.remove("show");
@@ -1069,10 +1133,24 @@
       if (!btn) return;
 
       const target = btn.getAttribute("data-target");
-      if (!target) return;
 
-      e.preventDefault();
-      goToView(target);
+      // 1) КНОПКИ ПЕРЕКЛЮЧЕНИЯ ЭКРАНОВ (overview, dossier, etc.)
+      if (target) {
+        e.preventDefault();
+        goToView(target);
+        return;
+      }
+
+      // 2) КНОПКИ ОТОБРАЖЕНИЯ ВЛОЖЕНИЯ
+
+      if (btn.classList.contains("attachment-toggle")) {
+        e.preventDefault();
+        btn.classList.add("hidden");   // спрятать кнопку
+        startAttachmentDetails();      // запускаем печать предупреждения + прогресс
+        return;
+      }
+
+
     });
 
     /* ---------- ЗАПУСК ОБЗОРА ---------- */
